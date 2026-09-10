@@ -1,56 +1,119 @@
-# Welcome to your Expo app 👋
+# ChalkBoard E-Commerce Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A full-stack e-commerce mobile application built with React Native (Expo), Node.js/Express, and MongoDB.
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React Native (Expo SDK 57) with Expo Router |
+| Backend | Node.js + Express.js |
+| Database | MongoDB with Mongoose |
+| Auth | JWT (JSON Web Tokens) |
+| State | React Context + useReducer pattern |
 
-   ```bash
-   npm install
-   ```
+## Features (MVP)
 
-2. Start the app
+- **Auth**: Register/Login with JWT authentication
+- **Product Listing**: Grid view with search and category filtering
+- **Product Detail**: Full product info with quantity selector and add-to-cart
+- **Cart**: Add/remove/update quantity, view total
+- **Checkout**: Place order with shipping address
+- **Order History**: View past orders with status badges
+- **Profile**: User info and logout
 
-   ```bash
-   npx expo start
-   ```
+## Project Structure
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+ChalkBoard/
+├── backend/
+│   ├── src/
+│   │   ├── config/         # DB connection
+│   │   ├── controllers/    # Auth, Product, Cart, Order logic
+│   │   ├── middleware/      # Auth guard, error handler
+│   │   ├── models/         # User, Product, Cart, Order schemas
+│   │   ├── routes/         # API route definitions
+│   │   ├── seed.js         # Product seeding script
+│   │   └── server.js       # Express entry point
+│   ├── .env.example
+│   └── package.json
+├── src/                    # Mobile app (Expo Router)
+│   ├── app/
+│   │   ├── (auth)/         # Login, Register screens
+│   │   ├── (tabs)/         # Home, Cart, Orders, Profile tabs
+│   │   ├── product/        # Product detail screen
+│   │   ├── checkout.tsx    # Checkout screen
+│   │   ├── order-confirmation.tsx
+│   │   └── _layout.tsx     # Root layout
+│   ├── components/         # Shared components
+│   ├── context/            # AuthContext, CartContext (useReducer)
+│   ├── services/           # API service (axios)
+│   └── hooks/              # Custom hooks (theme, color scheme)
+└── package.json
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Setup Instructions
 
-### Other setup steps
+### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+- Expo CLI (`npm install -g expo-cli`)
+- Expo Go app on your phone (or Android/iOS simulator)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### Backend Setup
 
-## Learn more
+```bash
+cd backend
+npm install
+cp .env.example .env    # Edit with your MongoDB URI and JWT secret
+npm run seed            # Seed 20 products into database
+npm run dev             # Start backend on port 5000
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Mobile Setup
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+cd ..                   # Back to root
+npm install
+npx expo start          # Start Expo dev server
+```
 
-## Join the community
+Scan the QR code with Expo Go on your phone, or press `a` for Android emulator / `i` for iOS simulator.
 
-Join our community of developers creating universal apps.
+### API Base URL
+The mobile app connects to `http://10.0.2.2:5000/api` (Android emulator) by default. For physical device, update the URL in `src/services/api.js` to your machine's local IP.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## API Endpoints
+
+```
+POST   /api/auth/register    - Register new user
+POST   /api/auth/login       - Login user
+GET    /api/auth/me           - Get current user (auth)
+GET    /api/products          - List products (supports ?search, ?category)
+GET    /api/products/:id      - Get single product
+GET    /api/products/categories - Get all categories
+GET    /api/cart              - Get user cart (auth)
+POST   /api/cart/add          - Add item to cart (auth)
+PUT    /api/cart/update       - Update cart item quantity (auth, productId in body)
+DELETE /api/cart/remove/:id   - Remove item from cart (auth)
+POST   /api/orders            - Create order from cart (auth)
+GET    /api/orders            - Get user order history (auth)
+GET    /api/orders/:id        - Get single order (auth)
+```
+
+## Out of Scope (deliberate cuts for 24h MVP)
+
+- Real payment gateway integration (mock checkout only)
+- Admin panel / seller dashboard
+- Reviews & ratings
+- Push notifications
+- Wishlist functionality
+- Advanced search/filter combos
+
+## Design Decisions
+
+- **Expo over bare React Native**: No native build setup needed, instant preview via Expo Go
+- **Expo Router over React Navigation**: File-based routing reduces boilerplate, already configured
+- **MongoDB over MySQL**: Schema-less fits JSON-native product/cart documents, no migrations needed
+- **JWT with AsyncStorage**: Stateless auth with secure token storage on device
+- **React Context over Redux**: Sufficient for auth and cart state, less boilerplate
