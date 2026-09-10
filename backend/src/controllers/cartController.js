@@ -1,6 +1,12 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 
+const parseQuantity = (value, fallback = 1) => {
+  const parsed = Number(value);
+  if (Number.isInteger(parsed) && parsed >= 1) return parsed;
+  return fallback;
+};
+
 exports.getCart = async (req, res, next) => {
   try {
     let cart = await Cart.findOne({ user: req.user.id }).populate(
@@ -19,7 +25,8 @@ exports.getCart = async (req, res, next) => {
 
 exports.addToCart = async (req, res, next) => {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const { productId } = req.body;
+    const quantity = parseQuantity(req.body.quantity, 1);
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -64,18 +71,13 @@ exports.addToCart = async (req, res, next) => {
 
 exports.updateCartItem = async (req, res, next) => {
   try {
-    const { productId, quantity } = req.body;
+    const { productId } = req.body;
+    const quantity = parseQuantity(req.body.quantity);
 
     if (!productId) {
       return res
         .status(400)
         .json({ success: false, message: "Product ID is required" });
-    }
-
-    if (quantity < 1) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Quantity must be at least 1" });
     }
 
     const product = await Product.findById(productId);

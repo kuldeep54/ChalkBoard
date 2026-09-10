@@ -11,6 +11,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { productsAPI, QueryParams, Product } from "../services/api";
 import ProductCard from "../components/product-card";
+import { ProductGridSkeleton } from "../components/skeletons";
 import { toastInfo, toastError, getErrorMessage } from "../utils/helpers";
 
 const PAGE_SIZE = 20;
@@ -137,21 +138,28 @@ export default function CatalogScreen() {
       <Stack.Screen options={{ title }} />
 
       <View className="gap-2 p-3">
-        <View className="flex-row items-center rounded-xl border border-chalk-line bg-white px-3">
-          <Ionicons name="search" size={20} color="#9ca3af" />
-          <TextInput
-            className="flex-1 p-3 text-base"
-            placeholder="Search products..."
-            value={search}
-            onChangeText={setSearch}
-            returnKeyType="search"
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={20} color="#9ca3af" />
+        <View className="flex-row items-center rounded-lg border border-chalk-line bg-white px-3">
+            <Ionicons name="search" size={20} color="#767676" />
+            <TextInput
+              className="flex-1 p-3 text-[15px]"
+              placeholder="Search ChalkBoard"
+              placeholderTextColor="#767676"
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <Ionicons name="close-circle" size={20} color="#767676" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              className="ml-2 rounded-md bg-chalk-gold px-3 py-2"
+              onPress={() => fetchPage(1, true)}
+            >
+              <Ionicons name="search" size={18} color="#111111" />
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
 
         <FlatList
           horizontal
@@ -185,14 +193,14 @@ export default function CatalogScreen() {
                 key={s.key}
                 className={`rounded-lg border px-3 py-1.5 ${
                   sort === s.key
-                    ? "border-chalk-blue bg-chalk-blue/10"
+                    ? "border-chalk-indigo bg-white"
                     : "border-chalk-line bg-white"
                 }`}
                 onPress={() => setSort(s.key)}
               >
                 <Text
                   className={`text-xs font-medium ${
-                    sort === s.key ? "text-chalk-blue" : "text-chalk-slate"
+                    sort === s.key ? "text-chalk-indigo" : "text-chalk-slate"
                   }`}
                 >
                   {s.label}
@@ -226,15 +234,15 @@ export default function CatalogScreen() {
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#4f46e5" />
+        <View className="flex-1 pt-2">
+          <ProductGridSkeleton />
         </View>
       ) : products.length === 0 ? (
         <View className="flex-1 items-center justify-center">
           <Ionicons name="search-outline" size={64} color="#d1d5db" />
           <Text className="mt-3 text-base text-chalk-slate">No products found</Text>
           <TouchableOpacity
-            className="mt-3 rounded-full bg-chalk-indigo px-5 py-2"
+            className="mt-3 rounded-lg bg-chalk-navy2 px-5 py-2"
             onPress={() => {
               toastInfo("Filters reset");
               setSearch("");
@@ -259,7 +267,7 @@ export default function CatalogScreen() {
           onEndReachedThreshold={0.3}
           ListFooterComponent={
             loadingMore ? (
-              <ActivityIndicator size="small" color="#4f46e5" className="py-4" />
+              <ActivityIndicator size="small" color="#232F3E" className="py-4" />
             ) : hasMore ? (
               <TouchableOpacity
                 className="my-4 items-center py-2"

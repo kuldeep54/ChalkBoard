@@ -4,19 +4,21 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   TextInput,
 } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { productsAPI, Product } from "../../services/api";
 import ProductCard from "../../components/product-card";
+import GoldButton from "../../components/gold-button";
+import { HomeScreenSkeleton } from "../../components/skeletons";
 import { toastError, getErrorMessage } from "../../utils/helpers";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const CATEGORIES: { name: string; icon: IconName }[] = [
+  { name: "All", icon: "grid-outline" },
   { name: "Electronics", icon: "phone-portrait-outline" },
   { name: "Clothing", icon: "shirt-outline" },
   { name: "Books", icon: "book-outline" },
@@ -77,22 +79,29 @@ export default function HomeScreen() {
       case "search":
         return (
           <View className="px-4 pb-2">
-            <View className="flex-row items-center rounded-xl border border-chalk-line bg-white px-3">
-              <Ionicons name="search" size={20} color="#9ca3af" />
-              <TextInput
-                className="flex-1 p-3 text-base"
-                placeholder="Search products..."
-                value={search}
-                onChangeText={setSearch}
-                returnKeyType="search"
-                onSubmitEditing={submitSearch}
-              />
-              {search.length > 0 && (
-                <TouchableOpacity onPress={() => setSearch("")}>
-                  <Ionicons name="close-circle" size={20} color="#9ca3af" />
-                </TouchableOpacity>
-              )}
-            </View>
+<View className="flex-row items-center rounded-lg border border-chalk-line bg-white px-3">
+            <Ionicons name="search" size={20} color="#767676" />
+            <TextInput
+              className="flex-1 p-3 text-[15px]"
+              placeholder="Search ChalkBoard"
+              placeholderTextColor="#767676"
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+              onSubmitEditing={submitSearch}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <Ionicons name="close-circle" size={20} color="#767676" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              className="ml-2 rounded-md bg-chalk-gold px-3 py-2"
+              onPress={submitSearch}
+            >
+              <Ionicons name="search" size={18} color="#111111" />
+            </TouchableOpacity>
+          </View>
           </View>
         );
       case "categories":
@@ -138,9 +147,7 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-chalk-mist">
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#4f46e5" />
-        </View>
+        <HomeScreenSkeleton />
       ) : (
         <FlatList
           data={SECTION_KEYS}
@@ -160,28 +167,35 @@ export default function HomeScreen() {
 function HeroBanner() {
   const router = useRouter();
   return (
-    <View className="mx-4 mt-4 overflow-hidden rounded-2xl bg-chalk-indigo p-6">
+    <View className="mx-4 mt-2 overflow-hidden rounded-lg bg-chalk-navy2 p-5">
       <Ionicons
         name="sparkles"
         size={90}
-        color="rgba(255,255,255,0.12)"
+        color="rgba(255,255,255,0.10)"
         style={{ position: "absolute", right: -10, top: -12 }}
       />
-      <Text className="text-sm font-semibold uppercase tracking-widest text-chalk-accent">
-        New Season
+      <Text className="text-sm font-bold uppercase tracking-widest text-chalk-accent">
+        New Season · Fresh Arrivals
       </Text>
       <Text className="mt-1 text-2xl font-bold text-white">
         Fresh picks,{`\n`}only on ChalkBoard
       </Text>
-      <Text className="mt-2 text-sm text-white/80">
+      <Text className="mt-2 text-sm text-white/85">
         Explore curated essentials across seven categories.
       </Text>
-      <TouchableOpacity
-        className="mt-4 self-start rounded-full bg-white px-5 py-2.5"
+<GoldButton
+        className="mt-4 self-start px-5 py-2.5"
         onPress={() => router.push({ pathname: "/catalog", params: { tag: "featured" } })}
       >
-        <Text className="text-sm font-bold text-chalk-indigo">Shop Now</Text>
-      </TouchableOpacity>
+        <Text className="text-sm font-bold text-[#111111]">Shop Now</Text>
+      </GoldButton>
+
+      <View className="mt-4 flex-row items-center gap-1.5 border-t border-white/15 pt-3">
+        <Ionicons name="checkmark-circle" size={15} color="#F0C14B" />
+        <Text className="text-xs text-white/85">
+          Fast & FREE Delivery · Cash on Delivery available
+        </Text>
+      </View>
     </View>
   );
 }
@@ -189,32 +203,24 @@ function HeroBanner() {
 function CategoryRow() {
   const router = useRouter();
   return (
-    <View className="mt-4">
-      <View className="mb-3 flex-row items-center justify-between px-4">
-        <Text className="text-lg font-bold text-chalk-ink">Categories</Text>
-        <Link href="/catalog" className="text-sm font-semibold text-chalk-blue">
-          Shop All
-        </Link>
-      </View>
+    <View className="mt-3 border-t border-chalk-navline bg-chalk-navy">
       <FlatList
         horizontal
         data={CATEGORIES}
         keyExtractor={(item) => item.name}
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-4"
+        contentContainerClassName="px-4 py-2"
         renderItem={({ item }) => (
           <TouchableOpacity
-            className="mr-3 w-16 items-center"
+            className="mr-2 rounded-md border border-transparent px-3 py-1.5"
             onPress={() =>
-              router.push({ pathname: "/catalog", params: { category: item.name } })
+              router.push({
+                pathname: "/catalog",
+                params: item.name === "All" ? {} : { category: item.name },
+              })
             }
           >
-            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-              <Ionicons name={item.icon} size={26} color="#4f46e5" />
-            </View>
-            <Text numberOfLines={1} className="mt-1.5 text-xs font-medium text-chalk-ink">
-              {item.name}
-            </Text>
+            <Text className="text-[13px] font-medium text-white">{item.name}</Text>
           </TouchableOpacity>
         )}
       />
@@ -242,7 +248,7 @@ function ProductSlider({
     <View className="mt-6">
       <View className="mb-3 flex-row items-center justify-between px-4">
         <View className="flex-row items-center gap-2">
-          <Ionicons name={icon} size={18} color="#4f46e5" />
+          <Ionicons name={icon} size={18} color="#232F3E" />
           <View>
             <Text className="text-lg font-bold text-chalk-ink">{title}</Text>
             <Text className="text-xs text-chalk-slate">{subtitle}</Text>

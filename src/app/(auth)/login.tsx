@@ -3,15 +3,14 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
-import { toastError, getErrorMessage } from "../../utils/helpers";
+import GoldButton from "../../components/gold-button";
+import { toastError, getErrorMessage, isValidEmail } from "../../utils/helpers";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -22,6 +21,10 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!email || !password) {
       toastError("Error", "Please fill in all fields");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      toastError("Error", "Please enter a valid email");
       return;
     }
     setLoading(true);
@@ -76,19 +79,9 @@ export default function LoginScreen() {
             </Link>
           </View>
 
-          <TouchableOpacity
-            className={`mt-2 items-center rounded-xl bg-chalk-indigo p-4 ${
-              loading ? "opacity-60" : ""
-            }`}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-base font-semibold text-white">Sign In</Text>
-            )}
-          </TouchableOpacity>
+          <GoldButton className="mt-2 items-center p-4" onPress={handleLogin} disabled={loading} loading={loading}>
+            <Text className="text-base font-bold text-[#111111]">Sign In</Text>
+          </GoldButton>
 
           <View className="mt-6 flex-row justify-center">
             <Text className="text-sm text-chalk-slate">

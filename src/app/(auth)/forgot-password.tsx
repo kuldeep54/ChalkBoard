@@ -7,12 +7,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { authAPI } from "../../services/api";
-import { toastError, toastSuccess, getErrorMessage } from "../../utils/helpers";
+import GoldButton from "../../components/gold-button";
+import { toastError, toastSuccess, getErrorMessage, isValidEmail } from "../../utils/helpers";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -24,11 +24,15 @@ export default function ForgotPasswordScreen() {
       toastError("Missing email", "Please enter your email address");
       return;
     }
+    if (!isValidEmail(email)) {
+      toastError("Error", "Please enter a valid email");
+      return;
+    }
     setLoading(true);
     try {
       await authAPI.forgotPassword(email);
       toastSuccess("Check your inbox", "A reset link has been sent to your email");
-      router.back();
+      router.replace("/(auth)/reset-password");
     } catch (err) {
       toastError("Request failed", getErrorMessage(err));
     } finally {
@@ -63,21 +67,19 @@ export default function ForgotPasswordScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <TouchableOpacity
-            className={`mt-2 items-center rounded-xl bg-chalk-indigo p-4 ${
-              loading ? "opacity-60" : ""
-            }`}
+          <Text className="text-xs text-chalk-slate">
+            Demo mode: the reset token is printed to the backend console.
+          </Text>
+          <GoldButton
+            className="mt-2 items-center p-4"
             onPress={handleSubmit}
             disabled={loading}
+            loading={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-base font-semibold text-white">
-                Send Reset Link
-              </Text>
-            )}
-          </TouchableOpacity>
+            <Text className="text-base font-bold text-[#111111]">
+              Send Reset Link
+            </Text>
+          </GoldButton>
 
           <TouchableOpacity
             className="mt-6 items-center"

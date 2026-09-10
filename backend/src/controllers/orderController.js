@@ -2,9 +2,24 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 
+const REQUIRED_ADDRESS_FIELDS = ["street", "city", "state", "zipCode", "country"];
+
 exports.createOrder = async (req, res, next) => {
   try {
     const { shippingAddress } = req.body;
+
+    if (
+      !shippingAddress ||
+      typeof shippingAddress !== "object" ||
+      REQUIRED_ADDRESS_FIELDS.some(
+        (field) => !shippingAddress[field] || !String(shippingAddress[field]).trim()
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a complete shipping address",
+      });
+    }
 
     const cart = await Cart.findOne({ user: req.user.id }).populate(
       "items.product"
@@ -17,10 +32,10 @@ exports.createOrder = async (req, res, next) => {
     }
 
     for (const item of cart.items) {
-      if (item.product.stock < item.quantity) {
+      if (!item.product || item.product.stock < item.quantity) {
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for ${item.product.name}`,
+          message: `Insufficient stock for ${item.product?.name || "item"}`,
         });
       }
     }
@@ -46,24 +61,48 @@ exports.createOrder = async (req, res, next) => {
       0
     );
 
-    const order = await Order.create({
-      user: req.user.id,
-      items: orderItems,
-      totalAmount,
-      shippingAddress,
-      status: "placed",
-    });
-
+    // Atomically decrement stock. Each update only succeeds if enough stock
+    // remains, which closes the check-then-decrement race window.
+    const decremented = [];
     for (const item of cart.items) {
-      await Product.findByIdAndUpdate(item.product._id, {
-        $inc: { stock: -item.quantity },
-      });
+      const result = await Product.updateOne(
+        { _id: item.product._id, stock: { $gte: item.quantity } },
+        { $inc: { stock: -item.quantity } }
+      );
+      if (result.modifiedCount !== 1) {
+        throw Object.assign(new Error(`Insufficient stock for ${item.product.name}`), {
+          statusCode: 400,
+          decremented,
+        });
+      }
+      decremented.push({ _id: item.product._id, quantity: item.quantity });
     }
 
-    cart.items = [];
-    await cart.save();
+    try {
+      const order = await Order.create({
+        user: req.user.id,
+        items: orderItems,
+        totalAmount,
+        shippingAddress,
+        status: "placed",
+      });
 
-    res.status(201).json({ success: true, order });
+      cart.items = [];
+      await cart.save();
+
+      res.status(201).json({ success: true, order });
+    } catch (err) {
+      // Roll back stock decrements so a failed order does not leak inventory.
+      await Product.bulkWrite(
+        decremented.map(({ _id, quantity }) => ({
+          updateOne: {
+            filter: { _id },
+            update: { $inc: { stock: quantity } },
+          },
+        }))
+      );
+      throw err;
+    }
   } catch (err) {
     next(err);
   }

@@ -3,15 +3,14 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { Link } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
-import { toastError, getErrorMessage } from "../../utils/helpers";
+import GoldButton from "../../components/gold-button";
+import { toastError, getErrorMessage, isValidEmail } from "../../utils/helpers";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -24,6 +23,14 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
       toastError("Error", "Please fill in all fields");
+      return;
+    }
+    if (name.trim().length < 2) {
+      toastError("Error", "Please enter your full name");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      toastError("Error", "Please enter a valid email");
       return;
     }
     if (password !== confirmPassword) {
@@ -96,21 +103,14 @@ export default function RegisterScreen() {
             secureTextEntry
           />
 
-          <TouchableOpacity
-            className={`mt-2 items-center rounded-xl bg-chalk-indigo p-4 ${
-              loading ? "opacity-60" : ""
-            }`}
+          <GoldButton
+            className="mt-2 items-center p-4"
             onPress={handleRegister}
             disabled={loading}
+            loading={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-base font-semibold text-white">
-                Create Account
-              </Text>
-            )}
-          </TouchableOpacity>
+            <Text className="text-base font-bold text-[#111111]">Create Account</Text>
+          </GoldButton>
 
           <View className="mt-6 flex-row justify-center">
             <Text className="text-sm text-chalk-slate">

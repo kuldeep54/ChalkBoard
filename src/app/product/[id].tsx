@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +13,9 @@ import { productsAPI, Product } from "../../services/api";
 import { useCart } from "../../context/CartContext";
 import RatingStars from "../../components/rating-stars";
 import ProductCard from "../../components/product-card";
+import GoldButton from "../../components/gold-button";
+import ProductReviews from "../../components/product-reviews";
+import { ProductDetailSkeleton } from "../../components/skeletons";
 import {
   formatMoney,
   salePrice,
@@ -76,11 +78,7 @@ export default function ProductDetailScreen() {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#4f46e5" />
-      </View>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (!product) return null;
@@ -144,21 +142,24 @@ export default function ProductDetailScreen() {
               </Text>
             </View>
             <RatingStars rating={product.rating} size={14} showValue />
-            <Text className="text-xs text-chalk-slate">
+            <Text className="text-xs text-chalk-tertiary">
               {product.ratingCount || 0} ratings
             </Text>
           </View>
 
           <Text className="text-2xl font-bold text-chalk-ink">{product.name}</Text>
 
-          <View className="mt-2 flex-row items-center gap-2">
-            <Text className="text-3xl font-bold text-chalk-blue">
+          <View className="mt-2 flex-row flex-wrap items-center gap-2">
+            <Text className="text-3xl font-bold text-chalk-price">
               {formatMoney(price)}
             </Text>
             {onSale && (
               <>
-                <Text className="text-lg text-chalk-slate line-through">
+                <Text className="text-base text-chalk-tertiary line-through">
                   {formatMoney(product.price)}
+                </Text>
+                <Text className="text-sm font-bold text-chalk-red">
+                  -{discountPercent(product)}%
                 </Text>
                 <Text className="text-sm font-semibold text-chalk-green">
                   Save {formatMoney(product.price - price)}
@@ -171,22 +172,37 @@ export default function ProductDetailScreen() {
             {product.description}
           </Text>
 
-          <View className="mt-4 flex-row items-center gap-2">
-            <Ionicons
-              name={product.stock > 0 ? "checkmark-circle" : "close-circle"}
-              size={20}
-              color={product.stock > 0 ? "#059669" : "#dc2626"}
-            />
-            <Text
-              className={`text-sm font-medium ${
-                product.stock > 0 ? "text-chalk-green" : "text-chalk-red"
-              }`}
-            >
-              {product.stock > 0
-                ? `${product.stock} in stock`
-                : "Out of stock"}
-            </Text>
+          <View className="mt-4 gap-2 rounded-lg border border-chalk-line bg-white p-3">
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+              <Text className="text-sm font-medium text-chalk-ink">
+                FREE Delivery on orders over $35
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="card-outline" size={18} color="#232F3E" />
+              <Text className="text-sm text-chalk-slate">
+                Cash on Delivery available
+              </Text>
+            </View>
+            {product.stock > 0 ? (
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                <Text className="text-sm font-medium text-chalk-green">
+                  {product.stock} in stock
+                </Text>
+              </View>
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="close-circle" size={18} color="#CC0C39" />
+                <Text className="text-sm font-medium text-chalk-red">
+                  Out of stock
+                </Text>
+              </View>
+            )}
           </View>
+
+          <ProductReviews productId={id} />
 
           {related.length > 0 && (
             <View className="mt-8">
@@ -213,7 +229,7 @@ export default function ProductDetailScreen() {
               className="h-11 w-11 items-center justify-center"
               onPress={() => setQuantity(Math.max(1, quantity - 1))}
             >
-              <Ionicons name="remove" size={20} color="#4f46e5" />
+              <Ionicons name="remove" size={20} color="#232F3E" />
             </TouchableOpacity>
             <Text className="min-w-10 text-center text-lg font-semibold text-chalk-ink">
               {quantity}
@@ -222,24 +238,19 @@ export default function ProductDetailScreen() {
               className="h-11 w-11 items-center justify-center"
               onPress={() => setQuantity(Math.min(product.stock, quantity + 1))}
             >
-              <Ionicons name="add" size={20} color="#4f46e5" />
+              <Ionicons name="add" size={20} color="#232F3E" />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            className={`flex-1 items-center rounded-xl bg-chalk-indigo p-3.5 ${
-              adding ? "opacity-60" : ""
-            }`}
+          <GoldButton
+            className="flex-1 items-center p-3.5"
             onPress={handleAddToCart}
             disabled={adding}
+            loading={adding}
           >
-            {adding ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-base font-semibold text-white">
-                Add to Cart · {formatMoney(price * quantity)}
-              </Text>
-            )}
-          </TouchableOpacity>
+            <Text className="text-base font-bold text-[#111111]">
+              Add to Cart · {formatMoney(price * quantity)}
+            </Text>
+          </GoldButton>
         </View>
       )}
     </View>

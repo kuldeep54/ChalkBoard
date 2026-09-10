@@ -5,6 +5,7 @@ const {
   login,
   getMe,
   forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/auth");
 
@@ -34,5 +35,16 @@ router.post(
 router.get("/me", protect, getMe);
 
 router.post("/forgot-password", forgotPassword);
+
+router.post(
+  "/reset-password",
+  [
+    body("token").notEmpty().withMessage("Reset token is required"),
+    body("newPassword")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters"),
+  ],
+  resetPassword
+);
 
 module.exports = router;

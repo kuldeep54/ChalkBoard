@@ -3,15 +3,14 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useCart } from "../context/CartContext";
 import { ordersAPI } from "../services/api";
+import GoldButton from "../components/gold-button";
 import {
   formatMoney,
   salePrice,
@@ -58,7 +57,7 @@ export default function CheckoutScreen() {
   };
 
   const inputClass =
-    "rounded-xl border border-chalk-line bg-white p-3.5 text-base";
+    "rounded-lg border border-chalk-line bg-white p-3.5 text-base";
 
   return (
     <KeyboardAvoidingView
@@ -66,9 +65,7 @@ export default function CheckoutScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerClassName="p-4 pb-10">
-        <Text className="mb-3 mt-1 text-lg font-semibold text-chalk-ink">
-          Shipping Address
-        </Text>
+        <Text className="mb-3 text-lg font-semibold text-chalk-ink">Shipping Address</Text>
         <View className="mb-6 gap-3">
           <TextInput
             className={inputClass}
@@ -110,10 +107,10 @@ export default function CheckoutScreen() {
         <Text className="mb-3 text-lg font-semibold text-chalk-ink">
           Order Summary
         </Text>
-        <View className="mb-6 rounded-xl border border-chalk-line bg-white p-4">
+        <View className="mb-6 rounded-lg border border-chalk-line bg-white p-4">
           {cart.items.map((item, idx) => (
             <View
-              key={idx}
+              key={item.product?._id ?? idx}
               className="mb-2 flex-row items-center justify-between"
             >
               <Text numberOfLines={1} className="mr-3 flex-1 text-sm text-chalk-slate">
@@ -127,25 +124,20 @@ export default function CheckoutScreen() {
           <View className="my-2 border-t border-chalk-line" />
           <View className="flex-row items-center justify-between">
             <Text className="text-lg font-semibold text-chalk-ink">Total</Text>
-            <Text className="text-xl font-bold text-chalk-blue">
+            <Text className="text-xl font-bold text-chalk-ink">
               {formatMoney(cartTotal)}
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity
-          className={`items-center rounded-xl bg-chalk-indigo p-4 ${
-            loading ? "opacity-60" : ""
-          }`}
+        <GoldButton
+          className="items-center p-4"
           onPress={handleCheckout}
           disabled={loading}
+          loading={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-lg font-semibold text-white">Place Order</Text>
-          )}
-        </TouchableOpacity>
+          <Text className="text-lg font-bold text-[#111111]">Place Order</Text>
+        </GoldButton>
       </ScrollView>
     </KeyboardAvoidingView>
   );

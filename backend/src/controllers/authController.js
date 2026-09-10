@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const crypto = require("crypto");
 const { validationResult } = require("express-validator");
 
 exports.register = async (req, res, next) => {
@@ -91,23 +92,63 @@ exports.forgotPassword = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No account found with that email" });
+
+    // Always respond with the same message whether or not the account exists
+    // to avoid leaking which emails are registered (user enumeration).
+    if (user) {
+      const resetToken = user.getResetPasswordToken();
+      await user.save({ validateBeforeSave: false });
+
+      // Mock delivery: log the reset link locally. Wire a real email
+      // provider (e.g. Nodemailer/SendGrid) here in production.
+      console.log(`[MOCK] Password reset link for ${email}:`);
+      console.log(`  Reset token: ${resetToken}`);
     }
-
-    const resetToken = user.getResetPasswordToken();
-    await user.save({ validateBeforeSave: false });
-
-    // Mock delivery: log the reset link locally. Wire a real email
-    // provider (e.g. Nodemailer/SendGrid) here in production.
-    console.log(`[MOCK] Password reset link for ${email}:`);
-    console.log(`  Reset token: ${resetToken}`);
 
     res.status(200).json({
       success: true,
-      message: "Password reset link sent to your email",
+      message: "If that email exists, a reset link has been sent",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res
+        .status(400)
+        .json({ success: false, message: errors.array()[0].msg });
+    }
+
+    const { token, newPassword } = req.body;
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired reset token" });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful. You can now log in.",
     });
   } catch (err) {
     next(err);

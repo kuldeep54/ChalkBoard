@@ -89,7 +89,7 @@ export default function ProfileScreen() {
       </View>
 
       {loadingOrders ? (
-        <ActivityIndicator color="#4f46e5" className="py-6" />
+        <ActivityIndicator color="#232F3E" className="py-6" />
       ) : orders.length > 0 ? (
         <View className="px-4">
           <View className="mb-2 flex-row items-center justify-between">
@@ -106,7 +106,7 @@ export default function ProfileScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <View className="h-9 w-9 items-center justify-center rounded-lg bg-chalk-mist">
-                  <Ionicons name="cube-outline" size={18} color="#4f46e5" />
+                  <Ionicons name="cube-outline" size={18} color="#232F3E" />
                 </View>
                 <View>
                   <Text className="text-sm font-semibold text-chalk-ink">
@@ -121,7 +121,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-              <Text className="text-base font-bold text-chalk-blue">
+              <Text className="text-base font-bold text-chalk-ink">
                 {formatMoney(order.totalAmount)}
               </Text>
             </TouchableOpacity>
@@ -166,7 +166,7 @@ function StatCard({
       onPress={onPress}
       disabled={!onPress}
     >
-      <Ionicons name={icon} size={22} color="#4f46e5" />
+      <Ionicons name={icon} size={22} color="#232F3E" />
       <Text className="mt-1.5 text-base font-bold text-chalk-ink">{value}</Text>
       <Text className="mt-0.5 text-xs text-chalk-slate">{label}</Text>
     </TouchableOpacity>

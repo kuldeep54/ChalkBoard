@@ -1,15 +1,18 @@
 import { create } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureDelete, secureGet } from "./storage";
 
-const API_BASE_URL = "http://10.0.2.2:5000/api";
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? "http://10.0.2.2:5000/api";
 
 const api = create({
   baseURL: API_BASE_URL,
+  timeout: 15000,
   headers: { "Content-Type": "application/json" },
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem("token");
+  const token = await secureGet("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -18,10 +21,10 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      AsyncStorage.removeItem("token");
-      AsyncStorage.removeItem("user");
+      await secureDelete("token");
+      await AsyncStorage.removeItem("user");
     }
     return Promise.reject(error);
   }
@@ -70,7 +73,7 @@ export interface OrderItem {
 
 export interface Order {
   _id: string;
-  status: "placed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "placed" | "shipped" | "delivered" | "cancelled";
   items: OrderItem[];
   totalAmount: number;
   shippingAddress?: Record<string, string>;
@@ -78,6 +81,14 @@ export interface Order {
 }
 
 export type QueryParams = Record<string, string | number | boolean>;
+
+export interface Review {
+  _id: string;
+  user: { _id: string; name: string };
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
 
 export const authAPI = {
   register: (data: { name: string; email: string; password: string }) =>
@@ -87,6 +98,11 @@ export const authAPI = {
   getMe: () => api.get<{ success: boolean; user: AuthUser }>("/auth/me"),
   forgotPassword: (email: string) =>
     api.post<{ success: boolean; message: string }>("/auth/forgot-password", { email }),
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<{ success: boolean; message: string }>("/auth/reset-password", {
+      token,
+      newPassword,
+    }),
 };
 
 export const productsAPI = {
@@ -102,6 +118,18 @@ export const productsAPI = {
       { params }
     ),
   getCategories: () => api.get<{ success: boolean; categories: string[] }>("/products/categories"),
+  getReviews: (id: string | string[]) =>
+    api.get<{
+      success: boolean;
+      averageRating: number;
+      reviewCount: number;
+      reviews: Review[];
+    }>(`/products/${id}/reviews`),
+  createReview: (id: string, rating: number, comment: string) =>
+    api.post<{ success: boolean; message: string }>(`/products/${id}/reviews`, {
+      rating,
+      comment,
+    }),
 };
 
 export const cartAPI = {

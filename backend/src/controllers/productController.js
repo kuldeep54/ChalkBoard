@@ -1,5 +1,14 @@
 const Product = require("../models/Product");
 
+const escapeRegex = (text) =>
+  String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const clampLimit = (value) => {
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed < 1) return 20;
+  return Math.min(parsed, 100);
+};
+
 exports.getProducts = async (req, res, next) => {
   try {
     const {
@@ -21,7 +30,7 @@ exports.getProducts = async (req, res, next) => {
     if (featured === "true") query.featured = true;
     if (trending === "true") query.trending = true;
     if (discount === "true") {
-      query.discountPrice = { $ne: null };
+      query.discountPrice = { $ne: null, $gt: 0 };
     }
 
     if (minPrice || maxPrice) {
@@ -31,11 +40,16 @@ exports.getProducts = async (req, res, next) => {
     }
 
     if (search) {
+      const safeSearch = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
+        { name: { $regex: safeSearch, $options: "i" } },
+        { description: { $regex: safeSearch, $options: "i" } },
       ];
     }
+
+    const pageNum = parseInt(page, 10);
+    const currentPage = Number.isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+    const limitNum = clampLimit(limit);
 
     const sortOptions = {
       newest: { createdAt: -1 },
@@ -49,15 +63,15 @@ exports.getProducts = async (req, res, next) => {
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
       .sort(sortOptions[sort] || sortOptions.newest)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
+      .skip((currentPage - 1) * limitNum)
+      .limit(limitNum);
 
     res.status(200).json({
       success: true,
       count: products.length,
       total,
-      totalPages: Math.ceil(total / limit),
-      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limitNum),
+      currentPage,
       products,
     });
   } catch (err) {

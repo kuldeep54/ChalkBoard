@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const Product = require("./models/Product");
+const User = require("./models/User");
+const Review = require("./models/Review");
 
 dotenv.config();
 
@@ -336,8 +338,80 @@ const seedDB = async () => {
     await Product.deleteMany({});
     console.log("Existing products cleared");
 
-    await Product.insertMany(products);
+    const createdProducts = await Product.insertMany(products);
     console.log(`${products.length} products seeded successfully`);
+
+    if (createdProducts.length >= 4) {
+      const [p1, p2, p3, p4] = createdProducts;
+
+      const demoUsers = [
+        { name: "Demo Shopper", email: "demo@chalkboard.app", password: "demo1234" },
+        { name: "Ava Carter", email: "ava@chalkboard.app", password: "demo1234" },
+        { name: "Liam Patel", email: "liam@chalkboard.app", password: "demo1234" },
+      ];
+      const users = [];
+      for (const u of demoUsers) {
+        let user = await User.findOne({ email: u.email });
+        if (!user) user = await User.create(u);
+        users.push(user);
+      }
+
+      const sampleReviews = [
+        {
+          product: p1._id,
+          user: users[0]._id,
+          rating: 4,
+          comment: "Great value for the price. The fit is comfortable for long sessions.",
+        },
+        {
+          product: p1._id,
+          user: users[1]._id,
+          rating: 5,
+          comment:
+            "Excellent sound quality and the noise cancellation is a game changer. Battery easily lasts all week.",
+        },
+        {
+          product: p2._id,
+          user: users[2]._id,
+          rating: 5,
+          comment: "Love the fabric and the relaxed cut. True to size and washes well.",
+        },
+        {
+          product: p3._id,
+          user: users[0]._id,
+          rating: 4,
+          comment: "Clear, well-structured chapters. Perfect for brushing up on fundamentals.",
+        },
+        {
+          product: p4._id,
+          user: users[1]._id,
+          rating: 2,
+          comment: "Decent, but shipping took longer than expected.",
+        },
+      ];
+
+      for (const review of sampleReviews) {
+        await Review.findOneAndUpdate(
+          { product: review.product, user: review.user },
+          { $set: { rating: review.rating, comment: review.comment } },
+          { upsert: true }
+        );
+      }
+      console.log(`${sampleReviews.length} sample reviews seeded`);
+
+      const stats = await Review.aggregate([
+        { $group: { _id: "$product", avg: { $avg: "$rating" }, count: { $sum: 1 } } },
+      ]);
+      await Promise.all(
+        stats.map((s) =>
+          Product.findByIdAndUpdate(s._id, {
+            rating: Math.round(s.avg * 10) / 10,
+            ratingCount: s.count,
+          })
+        )
+      );
+      console.log("Product ratings recalculated");
+    }
 
     process.exit(0);
   } catch (error) {

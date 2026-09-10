@@ -84,7 +84,10 @@ export default function OrdersScreen() {
       </View>
       <View style={styles.itemsList}>
         {item.items.map((orderItem, idx) => (
-          <View key={idx} style={styles.orderItem}>
+          <View
+            key={orderItem.product ?? `${orderItem.name}-${idx}`}
+            style={styles.orderItem}
+          >
             <Text style={styles.itemName} numberOfLines={1}>
               {orderItem.name} x{orderItem.quantity}
             </Text>

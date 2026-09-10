@@ -2,7 +2,8 @@ import { Redirect, Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, TouchableOpacity } from "react-native";
+import { toastInfo } from "../../utils/helpers";
 
 export default function TabLayout() {
   const { isAuthenticated, loading } = useAuth();
@@ -23,17 +24,18 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#2563eb",
-        tabBarInactiveTintColor: "#9ca3af",
+        tabBarActiveTintColor: "#F0C14B",
+        tabBarInactiveTintColor: "#CBD5E1",
         tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: "#e5e7eb",
+          backgroundColor: "#131921",
+          borderTopWidth: 0,
           paddingBottom: 4,
           height: 60,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
-        headerStyle: { backgroundColor: "#fff" },
-        headerTitleStyle: { fontWeight: "600" },
+        headerStyle: { backgroundColor: "#131921" },
+        headerTitleStyle: { fontWeight: "600", color: "#fff" },
+        headerTintColor: "#fff",
       }}
     >
       <Tabs.Screen
@@ -44,6 +46,16 @@ export default function TabLayout() {
             <Ionicons name="home" size={size} color={color} />
           ),
           headerTitle: "ChalkBoard",
+          headerTitleStyle: { fontWeight: "800", color: "#fff" },
+          headerRight: () => (
+            <TouchableOpacity
+              style={{ marginRight: 12 }}
+              onPress={() => toastInfo("Deliver to", "Indore — 452001")}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="location-outline" size={22} color="#FF9900" />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
@@ -55,7 +67,8 @@ export default function TabLayout() {
           ),
           tabBarBadge: cartCount > 0 ? cartCount : undefined,
           tabBarBadgeStyle: {
-            backgroundColor: "#ef4444",
+            backgroundColor: "#F0C14B",
+            color: "#131921",
             fontSize: 10,
             fontWeight: "bold",
           },

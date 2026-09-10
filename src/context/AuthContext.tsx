@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authAPI, AuthUser } from "../services/api";
+import { secureDelete, secureGet, secureSet } from "../services/storage";
 
 interface AuthState {
   user: AuthUser | null;
@@ -58,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadStoredAuth = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem("token");
+      const storedToken = await secureGet("token");
       const storedUser = await AsyncStorage.getItem("user");
       if (storedToken && storedUser) {
         dispatch({
@@ -81,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     const res = await authAPI.register({ name, email, password });
     const { token, user } = res.data;
-    await AsyncStorage.setItem("token", token);
+    await secureSet("token", token);
     await AsyncStorage.setItem("user", JSON.stringify(user));
     dispatch({ type: "AUTH_SUCCESS", payload: { token, user } });
     return res.data;
@@ -90,14 +91,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     const res = await authAPI.login({ email, password });
     const { token, user } = res.data;
-    await AsyncStorage.setItem("token", token);
+    await secureSet("token", token);
     await AsyncStorage.setItem("user", JSON.stringify(user));
     dispatch({ type: "AUTH_SUCCESS", payload: { token, user } });
     return res.data;
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem("token");
+    await secureDelete("token");
     await AsyncStorage.removeItem("user");
     dispatch({ type: "LOGOUT" });
   };

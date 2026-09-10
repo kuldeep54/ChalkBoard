@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 export default function RatingStars({
   rating = 0,
   size = 14,
-  color = "#f59e0b",
+  color = "#FFA41C",
   showValue = false,
 }) {
   const stars = [];

@@ -4,6 +4,19 @@ import type { Product } from "../services/api";
 export const formatMoney = (amount?: number | null): string =>
   `$${Number(amount || 0).toFixed(2)}`;
 
+export const isValidEmail = (email: string): boolean =>
+  /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email.trim());
+
+export const formatDate = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 export const salePrice = (product?: Product | null): number => {
   if (!product) return 0;
   const { price, discountPrice } = product;
