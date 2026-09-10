@@ -1,18 +1,52 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import Toast from "react-native-toast-message";
+import "../global.css";
+import { AuthProvider } from "../context/AuthContext";
+import { CartProvider } from "../context/CartContext";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
-
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <AuthProvider>
+      <CartProvider>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="product/[id]"
+            options={{
+              headerShown: true,
+              title: "Product Detail",
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="catalog"
+            options={{
+              headerShown: true,
+              title: "Products",
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="checkout"
+            options={{
+              headerShown: true,
+              title: "Checkout",
+              presentation: "modal",
+            }}
+          />
+          <Stack.Screen
+            name="order-confirmation"
+            options={{
+              headerShown: false,
+              presentation: "modal",
+            }}
+          />
+        </Stack>
+        <Toast />
+      </CartProvider>
+    </AuthProvider>
   );
 }
