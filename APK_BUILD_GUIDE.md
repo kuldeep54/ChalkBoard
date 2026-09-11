@@ -112,38 +112,36 @@ Step-by-step fix:
    or an `Error: MongoNetworkError` line to tell us the real cause.
 6. Retest: `https://chalkboard-api.onrender.com/api/products` → expect a JSON with products.
 
-### 5e. If emails fail on Render (`MAILER ERROR: Connection timeout`)
+### 5e. Emails on Render — use Brevo HTTP API (NOT SMTP)
 
-**Cause:** Google blocks connections to `smtp.gmail.com` from data-center IPs
-(Render's servers). TCP connect times out → nodemailer gives up.
-
-**Fix:** route email through **Brevo** (free relay, 300 emails/day) instead of
-Gmail's SMTP directly. Your Gmail stays the sender address.
+**Critical fact:** Render's free tier blocks **outbound SMTP connections** (any port:
+587, 465, 2525). Trying either Gmail or Brevo via SMTP gives
+`MAILER ERROR: Connection timeout`. **The only reliable way is Brevo's HTTP API**
+(port 443), which is never blocked.
 
 Step-by-step:
-1. **https://www.brevo.com** → click **Sign up** (top-right). Brevo is FREE —
-   ignore any price/plan banners, free tier needs **no credit card**.
-   Fill email `KULDEEP_EMAIL_REDACTED`, make a Brevo password
-   (e.g. `ChalkBoard@2026`), tick checkboxes, **Create my account**.
-2. Open your Gmail → click the **confirmation link** Brevo sent → account active.
-3. In the Brevo dashboard → **left sidebar** → **SMTP & API** → click the **SMTP** tab.
-4. **Sender Information** → **Edit sender** → enter `KULDEEP_EMAIL_REDACTED` → Save.
-   Gmail gets a confirmation email → copy the **6-digit code** → paste it back in
-   Brevo to confirm the sender.
-5. On the same SMTP page → **SMTP Keys** → **Generate a new SMTP key**
-   → name it `chalkboard` → **Generate**. It shows two values:
-   - **SMTP login** = your Brevo account email (usually the same Gmail)
-   - **SMTP key** = starts with `xkeysib-...`
-6. In Render → `chalkboard-api` → **Environment**, change:
+1. **https://www.brevo.com** → **Sign up** (FREE, no card) with any email.
+2. Left menu **Transactional → SMTP & API**.
+3. **SMTP tab → Sender Information → Edit sender** → enter
+   `KULDEEP_EMAIL_REDACTED` → confirm the 6-digit code email.
+4. **Same page → SMTP Keys → Generate** → save as `SMTP_PASS` backup
+   (starts `xsmtpsib-`). **NOTE:** SMTP never works on Render — ignore it.
+5. **IMPORTANT — the API key is the one that matters:**
+   click the **"API Keys"** tab (second tab on the SMTP & API page)
+   → **Generate a new API key** → starts with **`xkeysib-`**.
+6. Mailer logic (`backend/src/utils/mailer.js`): `BREVO_API_KEY` → HTTP API
+   (production/Render) → else SMTP (local dev) → else console preview.
+7. Render `render.yaml` env values that WORK:
    | Key | Value |
    |---|---|
-   | `SMTP_HOST` | `smtp-relay.brevo.com` |
-   | `SMTP_PORT` | `587` |
-   | `SMTP_USER` | *your Brevo login email* |
-   | `SMTP_PASS` | *your xkeysib-... key* |
+   | `BREVO_API_KEY` | `xkeysib-...` (the API key!) |
+   | `SMTP_HOST/SMTP_USER/SMTP_PASS` | left as Brevo (unused on Render) |
    | `MAIL_FROM` | `ChalkBoard <KULDEEP_EMAIL_REDACTED>` |
-7. **Manual Deploy → Redeploy current commit** → wait for Live.
-8. Retest register → expect `success: true` and a real verification email.
+8. Redeploy + test register → expect `success: true` + real email in the inbox.
+
+> 💡 If you ever paste the wrong key (`xsmtpsib-` instead of `xkeysib-`),
+> Brevo's API returns **401 Key not found** — verify locally with:
+> `node -e "fetch('https://api.brevo.com/v3/smtp/email',{method:'POST',...})"`
 
 ---
 
@@ -168,13 +166,40 @@ EXPO_PUBLIC_API_URL=https://chalkboard-api.onrender.com/api
 
 ## 8. 🔲 Build the APK (free)
 
-From `D:\ChalkBoard`:
+### 8a. Pre-build: Expo login (token)
+1. Open **https://expo.dev** → **Sign in** (Google/Apple/GitHub buttons at the bottom;
+   you may already have an account from Expo Go).
+2. **https://expo.dev/settings/access-tokens** → **Create token** → name it `chalkboard` → copy it.
+3. Paste it where the assistant needs it (it is used as `EXPO_TOKEN` for the build).
 
+### 8b. First-time EAS setup
 ```powershell
-npm install -g eas-cli
-eas login            # free Expo account; needs your login
+npm install -g eas-cli                 # once
+set EXPO_TOKEN=<paste token>
+eas whoami                             # should show your account
+eas init --account <your-username>     # links app.json to EAS project (runs once)
+```
+
+### 8c. Build
+```powershell
+set EXPO_TOKEN=<paste token>
 eas build -p android --profile preview
 ```
+- First run auto-creates the Android keystore.
+- Prints a dashboard link; APK ready in ~15–30 min.
+- Track: `eas build:list --platform android --limit 1`
+
+### 8d. Known build errors
+- **`npm ci can only install packages when package.json and package-lock.json are in sync`**
+  (Missing `@emnapi/core...` from lock file):
+  your lockfile was written by npm 11; EAS uses npm 10 (strict).
+  Fix:
+  ```powershell
+  npx -y npm@10.9.8 install --package-lock-only
+  # verify:
+  npx -y npm@10.9.8 ci --dry-run
+  git add package-lock.json && git commit -m "chore: npm10 lock" && git push
+  ```
 
 - Prints an EAS dashboard link with progress. APK ready in ~15–30 min (incl. queue).
 - Hit **Download .apk** → install on your phone (`adb install file.apk` or share the link), allow "Install unknown apps".
@@ -184,9 +209,22 @@ eas build -p android --profile preview
 ## 9. Verify on the real phone
 
 1. Open **ChalkBoard** (the app, not Expo Go).
-2. Register with your real email → **real 6-digit verification email**.
+2. Register with your real email → **real 6-digit verification email** (via Brevo).
 3. Enter code → sign in → browse → add to cart → checkout → **place order**.
 4. Order appears in **Orders** and is stored in **Atlas**.
+
+### Install the APK on the phone
+- **From the phone:** open the `.apk` link from the EAS dashboard in the phone's
+  browser → download → tap → allow "Install unknown apps" → **Install**.
+- **From PC (USB):** connect phone with USB (File transfer mode) → copy
+  `Downloads\ChalkBoard.apk` to the phone → open it in the file manager → Install.
+- **From PC (wireless adb):**
+  ```powershell
+  adb connect <ip>:5550
+  adb install "D:\ChalkBoard\ChalkBoard.apk"
+  ```
+- **Diagnostics:** `adb devices` (empty list = not connected);
+  wireless debug link from earlier runs is reset when the phone reboots.
 
 ### Quirks to expect
 - **First load after idle**: Render free tier sleeps after ~15 min; the first request wakes it (15–60 s). Fast after that.
@@ -215,9 +253,11 @@ eas build -p android --profile preview
 | Products seeded into Atlas | ✅ done |
 | GitHub repo `kuldeep54/ChalkBoard` | ✅ done |
 | `render.yaml` blueprint pushed | ✅ done |
-| Render service `chalkboard-api` | 🟡 live + Mongo OK, **email blocked — do section 5e (Brevo)** |
-| `.env` → Render URL | 🔲 after 5d is fixed |
-| `eas login` + APK build | 🔲 after 5d is fixed |
+| Render service `chalkboard-api` | ✅ live — Mongo OK, Brevo email OK |
+| `.env` → Render URL | ✅ done (committed) |
+| APK built (EAS) | ✅ **done** — `com.kuldeep.chalkboard` v1.0.0 (102 MB) |
+| Install on phone + verify | 🔲 your turn — section 9 |
+| `eas login` + APK build | ✅ **done** — build `12a86c2a`, APK downloaded |
 
 ---
 
