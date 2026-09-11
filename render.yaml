@@ -35,4 +35,4 @@ services:
       - key: SMTP_PASS
         value: SMTP_KEY_REDACTED
       - key: BREVO_API_KEY
-        value: SMTP_KEY_REDACTED
+        value: API_KEY_REDACTED
