@@ -1,173 +1,168 @@
 # ChalkBoard — APK Build & Cloud Deployment Guide
+*(single file — everything you need, updated as we go)*
 
-Everything you need to build an installable `.apk` for your real phone and make it
-work from anywhere (not just your home WiFi).
+> **Last updated:** 2026-09-11 — Atlas done ✅, GitHub done ✅, Render blueprint pushed ✅
 
 ---
 
-## Pricing (no surprises)
+## 0. TL;DR — what's left
+
+| # | Step | Who | Status |
+|---|---|---|---|
+| 1 | MongoDB Atlas cluster | You + me | ✅ DONE |
+| 2 | Products seeded into Atlas | me | ✅ DONE |
+| 3 | GitHub repo `kuldeep54/ChalkBoard` | me | ✅ DONE |
+| 4 | Render web service (free) | You (needs login) | 🔲 NEXT |
+| 5 | Point app `.env` at Render URL | me | 🔲 after 4 |
+| 6 | Build the APK with EAS | me (needs your login) | 🔲 after 4 |
+
+---
+
+## 1. Prices — no surprises
 
 | Thing | Cost | Notes |
 |---|---|---|
-| MongoDB Atlas (M0 cluster) | **Free** | 512 MB storage, fine for a school project |
-| Render web service | **Free** | Sleeps after ~15 min idle; wakes on request (slightly slow first load) |
-| EAS Build (preview APK) | **Free** | Needs free Expo account; you wait in a queue, no credit card |
-| Gmail app password | **Free** | Already configured and working |
+| MongoDB Atlas M0 | **Free** | 512 MB |
+| Render web service | **Free** | Sleeps after ~15 min idle; first request after sleep takes 15–60 s |
+| EAS Build (preview APK) | **Free** | Needs Expo account, you wait in queue, no credit card |
+| Gmail app password | **Free** | Already working |
 
 ---
 
-## Phase 1 — Cloud database (MongoDB Atlas, ~10 min)
+## 2. ✅ DONE — MongoDB Atlas
 
-1. Go to **https://www.mongodb.com/atlas** → Sign up / log in.
-2. Build a Cluster → choose the **FREE M0** tier. Pick a region near you
-   (e.g. **Mumbai / ap-south-1**).
-3. **Database Access** → Add New Database User:
-   - Username: e.g. `chalkboard`
-   - Password: make a strong one, **store it now**
-4. **Network Access** → Add IP Address → **Allow access from anywhere** (`0.0.0.0/0`) → Confirm.
-   (OK for a school project. You can tighten this later.)
-5. **Databases** → your cluster → **Connect** → **Drivers**:
-   - Copy the connection string, looks like:
-     ```
-     mongodb+srv://chalkboard:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-     ```
-   - Replace `<password>` with the real password.
-   - **This is your `MONGODB_URI`.**
+- Cluster: `Cluster0` (M0 free, region ap-south-1)
+- Database user: `malviyakuldeep54_db_user` / `DB_PASS_REDACTED`
+- Connection string (with `/chalkboard` DB name — do NOT remove it):
 
----
-
-## Phase 2 — Deploy backend to Render (free, ~15 min)
-
-### 2a. GitHub
-1. Make a repo (e.g. `chalkboard`) and push this project.
-   - `.gitignore` already excludes `.env` files, so secrets stay off GitHub.
-
-### 2b. Render web service
-1. Go to **https://render.com** → Sign up (GitHub login is easiest).
-2. **New** → **Web Service** → connect your GitHub repo.
-3. Settings:
-   | Setting | Value |
-   |---|---|
-   | Root Directory | `backend` |
-   | Build Command | `npm install` |
-   | Start Command | `npm start` |
-   | Instance Type | Free |
-4. **Environment variables** — add ALL of these:
-   | Key | Value |
-   |---|---|
-   | `MONGODB_URI` | your Atlas connection string (from Phase 1) |
-   | `JWT_SECRET` | a long random string (e.g. 30+ random chars) |
-   | `ACCESS_TOKEN_EXPIRE` | `15m` |
-   | `JWT_EXPIRE` | `7d` |
-   | `AUTH_BASE_URL` | `chalkboard://` |
-   | `MAIL_FROM` | `ChalkBoard <no-reply@chalkboard.app>` |
-   | `SMTP_HOST` | `smtp.gmail.com` |
-   | `SMTP_PORT` | `587` |
-   | `SMTP_SECURE` | `false` |
-   | `SMTP_USER` | `KULDEEP_EMAIL_REDACTED` |
-   | `SMTP_PASS` | `GMAIL_APP_PASS_REDACTED` |
-   | `CORS_ORIGIN` | (optional) add your backend URL |
-5. **Deploy** → wait until status = **Live** (first deploy takes a few minutes).
-6. Your app URL is `https://<app-name>.onrender.com`. Verify:
-   ```
-   https://<app-name>.onrender.com/api/health
-   ```
-   → Should return `{"success":true,"message":"ChalkBoard API is running"}`
-
-### 2c. Seed products into Atlas
-From your PC (against the cloud DB):
 ```
-cd backend
-set MONGODB_URI=mongodb+srv://chalkboard:<password>@cluster0.xxxxx.mongodb.net/chalkboard
-node src/seed.js
+MONGODB_URI_REDACTED
 ```
-> Tip: temporarily edit `backend/.env`'s `MONGODB_URI` to the Atlas string while seeding, then switch it back for local dev.
+
+- **IP allow-list:** `203.115.73.5` currently added. If your IP changes and you can't connect, add the new IP in Atlas → Network Access. (For max convenience: set "Allow access from anywhere" `0.0.0.0/0`.)
+- If you forget the DB password: Atlas → Database Access → Edit user → Edit Password.
 
 ---
 
-## Phase 3 — Point the app at the cloud backend
+## 3. ✅ DONE — Products seeded
 
-Edit `D:\ChalkBoard\.env`:
-```
-EXPO_PUBLIC_API_URL=https://<app-name>.onrender.com/api
-```
-(Replace `<app-name>.onrender.com` with your real Render URL.)
+20 products + 5 reviews are already in Atlas (run from your PC against the cloud DB).
 
 ---
 
-## Phase 4 — Production app config (DO THIS BEFORE THE FIRST BUILD)
+## 4. ✅ DONE — GitHub repo
 
-In `D:\ChalkBoard\app.json`:
-- Change the android package to something unique:
-  ```json
-  "android": {
-    "package": "com.kuldeep.chalkboard"
-  }
-  ```
-- Icon, splash, and adaptive icons are already set (assets exist).
-- Everything else is ready (`expo-router`, `expo-secure-store`,
-  `expo-build-properties` with cleartext traffic enabled).
+- Repo: **https://github.com/kuldeep54/ChalkBoard** (private)
+- All code pushed: guest mode, OTP verify/reset, delivery address picker, address API, `eas.json`, `render.yaml`
+- `backend/.env` (with secrets) and root `.env` are NOT committed.
 
 ---
 
-## Phase 5 — Build the APK (free)
+## 5. 🔲 NEXT — Deploy backend to Render (free, ~10 min)
+
+### 5a. Blueprint is already in the repo
+`D:\ChalkBoard\render.yaml` auto-configures Render:
+- Runtime: Node, Root dir: `backend`
+- Build: `npm install` | Start: `npm start` | Health: `/api/health`
+- Env vars pre-filled: SMTP (Gmail working), `AUTH_BASE_URL=chalkboard://`, `JWT_EXPIRE`, `ACCESS_TOKEN_EXPIRE`, `MAIL_FROM`
+
+### 5b. Steps (needs YOUR Render login)
+1. Go to **https://render.com** → Sign up (easiest: "Sign up with GitHub").
+2. **New** → **Blueprint** → connect the `ChalkBoard` repo.
+3. Render reads `render.yaml` → create the service named `chalkboard-api`.
+4. Three secrets are marked `sync: false` — fill them in the service's **Environment** tab before deploy:
+   - `MONGODB_URI` = `MONGODB_URI_REDACTED`
+   - `JWT_SECRET` = any long random string (30+ chars)
+   - `SMTP_PASS` = `GMAIL_APP_PASS_REDACTED`
+5. Click **Apply / Deploy** → wait for **Live** (first build ~5 min).
+6. Verify: open `https://chalkboard-api.onrender.com/api/health`
+   → expect `{"success":true,"message":"ChalkBoard API is running"}`
+
+> If you couldn't use the Blueprint and had to click **New → Web Service** manually instead:
+> Root Directory = `backend`, Build = `npm install`, Start = `npm start`,
+> then set the SAME env vars above.
+
+### 5c. Mark done
+- [ ] Service Live
+- [ ] `/api/health` returns "running"
+
+**Then tell me the URL** (e.g. `https://chalkboard-api.onrender.com`) and I'll do the rest.
+
+---
+
+## 6. 🔲 AFTER Render is live — point app at cloud backend
+
+`D:\ChalkBoard\.env`:
+```
+EXPO_PUBLIC_API_URL=https://chalkboard-api.onrender.com/api
+```
+> Keep a copy of the LAN URL (`http://192.168.1.11:5000/api`) for Expo Go dev when the PC backend is running.
+
+---
+
+## 7. ✅ DONE — App config for production build
+
+- `app.json` android package changed: `com.kuldeep.chalkboard`
+  (important: it CANNOT change again after Play Store publish, fine for a direct APK install)
+- Icon / splash / adaptive icons: present
+- `eas.json` created with a `preview` profile → builds a plain `.apk`
+
+---
+
+## 8. 🔲 Build the APK (free)
 
 From `D:\ChalkBoard`:
 
 ```powershell
-# 1. Install the EAS CLI (once)
 npm install -g eas-cli
-
-# 2. Log in with a free Expo account
-eas login
-
-# 3. Make sure eas.json exists (preview profile → plain .apk)
-eas build:configure
-
-# 4. Start the build
+eas login            # free Expo account; needs your login
 eas build -p android --profile preview
 ```
 
-- The command prints a **link to the EAS dashboard** with build progress.
-- APK builds take roughly **15–30 min** including queue time.
-- When done, the dashboard shows a **Download .apk** button.
-- Send that file to your phone (or `adb install <file>.apk` over USB) and
-  allow **Install unknown apps**.
+- Prints an EAS dashboard link with progress. APK ready in ~15–30 min (incl. queue).
+- Hit **Download .apk** → install on your phone (`adb install file.apk` or share the link), allow "Install unknown apps".
 
 ---
 
-## Phase 6 — Verify on your real phone
+## 9. Verify on the real phone
 
-1. Open **ChalkBoard** (real app, not Expo Go).
-2. Register with your real email → you get a **real verification email** with a 6-digit code.
-3. Enter the code → sign in.
-4. Browse → search → add to cart → checkout → place an order.
-5. Order should be visible in **Orders** and stored in **Atlas**.
+1. Open **ChalkBoard** (the app, not Expo Go).
+2. Register with your real email → **real 6-digit verification email**.
+3. Enter code → sign in → browse → add to cart → checkout → **place order**.
+4. Order appears in **Orders** and is stored in **Atlas**.
 
-### Known quirks after install
-- **First load after the app sleeps**: Render's free tier puts your backend to
-  sleep after ~15 min idle. The first request may take **15–60 s** to wake up.
-  Subsequent requests are fast.
-- **Emails**: verification/reset emails are sent from your own Gmail account.
-- **Change IP / location**: nothing to reconfigure — the app talks to the cloud URL.
+### Quirks to expect
+- **First load after idle**: Render free tier sleeps after ~15 min; the first request wakes it (15–60 s). Fast after that.
+- **Emails**: sent from your own Gmail account (`KULDEEP_EMAIL_REDACTED`).
+- **Location / address**: works anywhere — no reconfiguration needed.
 
 ---
 
-## Local dev is unaffected
+## Final checklist before the APK build
 
-Everything above doesn't break your daily dev loop:
-- Keep `D:\ChalkBoard\.env` = `http://192.168.1.11:5000/api` when testing with
-  Expo Go on your LAN, swap to the Render URL only when building the APK.
-- Keep `backend/.env` with `mongodb://localhost:27017/chalkboard` for local API tests.
-
----
-
-## Checklist before the APK build
-
-- [ ] Atlas cluster created + connection string saved
-- [ ] Render service deployed + `/api/health` returns "running"
-- [ ] Products seeded into Atlas (`node src/seed.js`)
-- [ ] `.env` has the Render URL
-- [ ] `app.json` package changed to `com.kuldeep.chalkboard`
-- [ ] `eas.json` has a `preview` profile (buildType: `apk`)
+- [ ] Render service **Live** + `/api/health` OK
+- [ ] `.env` has `EXPO_PUBLIC_API_URL=https://chalkboard-api.onrender.com/api`
+- [ ] `app.json` package = `com.kuldeep.chalkboard`
+- [ ] `eas.json` present (done)
+- [ ] `render.yaml` present (done)
 - [ ] `eas login` done
+- [ ] `eas build -p android --profile preview` run
+
+---
+
+## Cheat sheet — key commands
+
+```powershell
+# Restart backend locally
+Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -like "*src/server.js*" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+Start-Process cmd.exe "/c node src/server.js >> server.log 2>> server.err.log" -WorkingDirectory D:\ChalkBoard\backend -WindowStyle Hidden
+
+# Seed products
+cd backend; node src/seed.js
+
+# Typecheck app
+npx tsc --noEmit
+
+# Open app on phone (Expo Go, LAN)
+adb -s adb-4afabc86-wON8qz._adb-tls-connect._tcp shell am start -a android.intent.action.VIEW -d "exp://192.168.1.11:8081"
+```

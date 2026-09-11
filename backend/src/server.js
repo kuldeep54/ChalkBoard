@@ -12,6 +12,9 @@ connectDB();
 
 const app = express();
 
+// Trust reverse proxy (Render, Heroku, Cloudflare) for rate limiting & IP detection
+app.set("trust proxy", 1);
+
 app.use(helmet());
 
 const CORS_ORIGIN = process.env.CORS_ORIGIN
@@ -20,8 +23,8 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow same-origin / non-browser requests (no Origin header).
-      if (!origin || CORS_ORIGIN.includes(origin)) return callback(null, true);
+      // Allow same-origin / non-browser requests (no Origin header), or wildcard "*", or matched origin.
+      if (!origin || CORS_ORIGIN.includes("*") || CORS_ORIGIN.includes(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
     },
   })
@@ -50,7 +53,15 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/order", require("./routes/orders"));
 
 app.get("/api/health", (req, res) => {
-  res.json({ success: true, message: "ChalkBoard API is running" });
+  const mongoose = require("mongoose");
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = dbState === 1 ? "connected" : "disconnected";
+  res.json({
+    success: true,
+    message: "ChalkBoard API is running",
+    database: dbStatus,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use(errorHandler);
