@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
 import GoldButton from "../../components/gold-button";
 import type { CartItem } from "../../services/api";
@@ -23,7 +24,17 @@ import {
 
 export default function CartScreen() {
   const { cart, loading, updateQuantity, removeFromCart, cartTotal } = useCart();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      toastInfo("Login required", "Please sign in to place your order");
+      router.push("/(auth)/login");
+      return;
+    }
+    router.push("/checkout");
+  };
 
   if (loading) {
     return (
@@ -131,7 +142,7 @@ export default function CartScreen() {
             {formatMoney(cartTotal)}
           </Text>
         </View>
-        <GoldButton className="items-center p-4" onPress={() => router.push("/checkout")}>
+        <GoldButton className="items-center p-4" onPress={handleCheckout}>
           <Text className="text-base font-bold text-[#111111]">
             Proceed to Checkout
           </Text>

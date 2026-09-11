@@ -21,6 +21,14 @@ exports.createOrder = async (req, res, next) => {
       });
     }
 
+    const zip = String(shippingAddress.zipCode).trim();
+    if (!/^\d{4,10}$/.test(zip) || /^(\d)\1+$/.test(zip)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid ZIP / postal code (4–10 digits)",
+      });
+    }
+
     const cart = await Cart.findOne({ user: req.user.id }).populate(
       "items.product"
     );

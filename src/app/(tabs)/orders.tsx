@@ -5,11 +5,18 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { ordersAPI, Order } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import GoldButton from "../../components/gold-button";
+import { toastInfo } from "../../utils/helpers";
 
 export default function OrdersScreen() {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,9 +32,35 @@ export default function OrdersScreen() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch on mount
     fetchOrders();
-  }, []);
+  }, [isAuthenticated]);
+
+  // Login gate for guests — order history is account-only.
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="lock-closed-outline" size={80} color="#d1d5db" />
+        <Text style={styles.emptyTitle}>Your orders live behind login</Text>
+        <Text style={styles.emptySubtitle}>
+          Sign in to view your order history.
+        </Text>
+        <GoldButton
+          className="mt-6 w-56 items-center p-4"
+          onPress={() => {
+            toastInfo("Login required", "Sign in to view your orders");
+            router.push("/(auth)/login");
+          }}
+        >
+          <Text className="text-base font-bold text-[#111111]">Sign In</Text>
+        </GoldButton>
+      </View>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

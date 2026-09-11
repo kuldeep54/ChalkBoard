@@ -7,12 +7,13 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
 import GoldButton from "../../components/gold-button";
-import { toastError, getErrorMessage, isValidEmail } from "../../utils/helpers";
+import { toastError, toastSuccess, getErrorMessage, isValidEmail, isValidName } from "../../utils/helpers";
 
 export default function RegisterScreen() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,6 +28,10 @@ export default function RegisterScreen() {
     }
     if (name.trim().length < 2) {
       toastError("Error", "Please enter your full name");
+      return;
+    }
+    if (!isValidName(name)) {
+      toastError("Error", "Name can only contain letters and spaces");
       return;
     }
     if (!isValidEmail(email)) {
@@ -44,6 +49,14 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await register(name, email, password);
+      toastSuccess(
+        "Account created",
+        "Please verify your email to continue."
+      );
+      router.push({
+        pathname: "/(auth)/verify-email",
+        params: { email },
+      });
     } catch (err) {
       toastError("Registration Failed", getErrorMessage(err));
     } finally {

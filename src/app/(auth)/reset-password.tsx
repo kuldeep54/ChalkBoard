@@ -7,7 +7,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { authAPI } from "../../services/api";
 import GoldButton from "../../components/gold-button";
@@ -15,13 +15,15 @@ import { toastError, toastSuccess, getErrorMessage } from "../../utils/helpers";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const [token, setToken] = useState("");
+  const { token: initialToken } = useLocalSearchParams<{ token?: string }>();
+  const [token, setToken] = useState(initialToken ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!token || !newPassword || !confirmPassword) {
+    const code = initialToken && initialToken.length > 6 ? initialToken : token;
+    if (!code || !newPassword || !confirmPassword) {
       toastError("Missing fields", "Please fill in all fields");
       return;
     }
@@ -35,7 +37,7 @@ export default function ResetPasswordScreen() {
     }
     setLoading(true);
     try {
-      await authAPI.resetPassword(token, newPassword);
+      await authAPI.resetPassword(code, newPassword);
       toastSuccess("Password reset", "You can now log in with your new password");
       router.replace("/(auth)/login");
     } catch (err) {
@@ -57,18 +59,19 @@ export default function ResetPasswordScreen() {
           </View>
           <Text className="text-3xl font-bold text-chalk-ink">Set New Password</Text>
           <Text className="mt-2 text-center text-base text-chalk-slate">
-            Enter the reset token you received along with your new password.
+            Enter the 6-digit code from your email along with your new password.
           </Text>
         </View>
 
         <View className="gap-3">
-          <Text className="mb-1 text-sm font-semibold text-chalk-ink">Reset Token</Text>
+          <Text className="mb-1 text-sm font-semibold text-chalk-ink">Reset Code</Text>
           <TextInput
-            className="rounded-xl border border-chalk-line bg-chalk-mist p-4 text-base"
-            placeholder="Paste your reset token"
+            className="rounded-xl border border-chalk-line bg-chalk-mist p-4 text-center text-2xl font-bold tracking-widest text-chalk-ink"
+            placeholder="— — — — — —"
             value={token}
             onChangeText={setToken}
-            autoCapitalize="none"
+            keyboardType="number-pad"
+            maxLength={6}
             autoCorrect={false}
           />
 

@@ -1,12 +1,11 @@
-import { Redirect, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { ActivityIndicator, View, TouchableOpacity } from "react-native";
-import { toastInfo } from "../../utils/helpers";
 
 export default function TabLayout() {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
   const { cartCount } = useCart();
 
   if (loading) {
@@ -15,10 +14,6 @@ export default function TabLayout() {
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     );
-  }
-
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
   }
 
   return (
@@ -50,7 +45,6 @@ export default function TabLayout() {
           headerRight: () => (
             <TouchableOpacity
               style={{ marginRight: 12 }}
-              onPress={() => toastInfo("Deliver to", "Indore — 452001")}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="location-outline" size={22} color="#FF9900" />

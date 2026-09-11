@@ -4,8 +4,25 @@ import type { Product } from "../services/api";
 export const formatMoney = (amount?: number | null): string =>
   `$${Number(amount || 0).toFixed(2)}`;
 
-export const isValidEmail = (email: string): boolean =>
-  /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email.trim());
+export const isValidEmail = (email: string): boolean => {
+  const v = email.trim();
+  if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v)) return false;
+  const local = v.split("@")[0];
+  if (!/[a-zA-Z]/.test(local)) return false;
+  return true;
+};
+
+/** Names can contain letters, spaces, dots, apostrophes and hyphens only. */
+export const isValidName = (name: string): boolean =>
+  /^[a-zA-Z][a-zA-Z\s.'-]*$/.test(name.trim());
+
+/** Numeric postal / ZIP code, 4–10 digits. Must contain at least two different digits. */
+export const isValidZipCode = (zip: string): boolean => {
+  const v = zip.trim();
+  if (!/^\d{4,10}$/.test(v)) return false;
+  if (/^(\d)\1+$/.test(v)) return false;
+  return true;
+};
 
 export const formatDate = (iso: string): string => {
   const d = new Date(iso);

@@ -11,10 +11,11 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useRouter } from "expo-router";
 import { ordersAPI, Order } from "../../services/api";
+import GoldButton from "../../components/gold-button";
 import { formatMoney, toastInfo, toastSuccess } from "../../utils/helpers";
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { cartCount } = useCart();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -33,9 +34,40 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch on mount
     fetchOrders();
-  }, []);
+  }, [isAuthenticated]);
+
+  // Login gate for guests — profile is account-only.
+  if (!isAuthenticated) {
+    return (
+      <View className="flex-1 items-center justify-center bg-chalk-mist p-6">
+        <View className="h-16 w-16 items-center justify-center rounded-2xl bg-chalk-indigo">
+          <Ionicons name="person-circle-outline" size={36} color="#fff" />
+        </View>
+        <Text className="mt-4 text-xl font-bold text-chalk-ink">
+          You&apos;re browsing as a guest
+        </Text>
+        <Text className="mt-2 text-center text-sm text-chalk-slate">
+          Sign in to access your profile, orders, and saved information.
+        </Text>
+        <GoldButton
+          className="mt-6 w-full items-center p-4"
+          onPress={() => router.push("/(auth)/login")}
+        >
+          <Text className="text-base font-bold text-[#111111]">Sign In</Text>
+        </GoldButton>
+        <View className="mt-3 w-full items-center">
+          <TouchableOpacity onPress={() => router.push("/(tabs)/home")}>
+            <Text className="text-sm font-semibold text-chalk-blue">
+              Continue shopping
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const totalSpent = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 

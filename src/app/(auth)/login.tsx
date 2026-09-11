@@ -7,12 +7,13 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
 import GoldButton from "../../components/gold-button";
 import { toastError, getErrorMessage, isValidEmail } from "../../utils/helpers";
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,8 +31,29 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch (err) {
-      toastError("Login Failed", getErrorMessage(err));
+    } catch (err: unknown) {
+      const e = err as {
+        response?: {
+          status?: number;
+          data?: {
+            requiresVerification?: boolean;
+            email?: string;
+            message?: string;
+          };
+        };
+      };
+      if (e.response?.data?.requiresVerification) {
+        toastError(
+          "Email not verified",
+          "Please verify your email to continue."
+        );
+        router.push({
+          pathname: "/(auth)/verify-email",
+          params: { email: e.response.data.email ?? email },
+        });
+      } else {
+        toastError("Login Failed", getErrorMessage(err));
+      }
     } finally {
       setLoading(false);
     }

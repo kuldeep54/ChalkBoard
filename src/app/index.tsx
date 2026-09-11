@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
 
   const [logoOpacity] = useState(() => new Animated.Value(0));
   const [logoScale] = useState(() => new Animated.Value(0.6));
@@ -75,10 +75,10 @@ export default function SplashScreen() {
   useEffect(() => {
     if (loading) return;
     const timer = setTimeout(() => {
-      router.replace(isAuthenticated ? "/(tabs)/home" : "/(auth)/login");
+      router.replace("/(tabs)/home");
     }, 1400);
     return () => clearTimeout(timer);
-  }, [loading, isAuthenticated, router]);
+  }, [loading, router]);
 
   return (
     <View className="flex-1 items-center justify-center bg-chalk-indigo">
