@@ -17,6 +17,9 @@ function getTransport() {
     port: Number(SMTP_PORT || 587),
     secure: SMTP_SECURE === "true",
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    connectionTimeout: 10000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
   });
   return transporterCache;
 }
@@ -51,13 +54,18 @@ async function sendMail({ to, subject, text, html }) {
   const transport = getTransport();
 
   if (transport) {
-    await transport.sendMail({
-      from: process.env.MAIL_FROM || "ChalkBoard <no-reply@chalkboard.app>",
-      to,
-      subject,
-      text,
-      html,
-    });
+    try {
+      await transport.sendMail({
+        from: process.env.MAIL_FROM || "ChalkBoard <no-reply@chalkboard.app>",
+        to,
+        subject,
+        text,
+        html,
+      });
+    } catch (error) {
+      console.error(`MAILER ERROR: ${error.message}`);
+      throw error;
+    }
     return { preview: false };
   }
 
