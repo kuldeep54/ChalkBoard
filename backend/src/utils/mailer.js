@@ -26,10 +26,6 @@ function getTransport() {
 
 /**
  * Build a clickable link the app can open.
- *   - AUTH_BASE_URL (e.g. "chalkboard://" or "exp://192.168.1.11:8081/--/")
- *     when configured wins.
- *   - Otherwise derive a dev Expo deep link from the incoming request host
- *     (the phone's Expo Go can open exp://HOST:8081/--/... routes).
  */
 function buildLink(req, route, token) {
   if (process.env.AUTH_BASE_URL) {
@@ -41,16 +37,41 @@ function buildLink(req, route, token) {
 }
 
 /**
- * Send an email. Uses the configured SMTP transport when available,
- * otherwise prints a mail preview to the server console (development mode).
- *
- * @param {object} opts
- * @param {string} opts.to
- * @param {string} opts.subject
- * @param {string} opts.text
- * @param {string} [opts.html]
+ * Send an email.
+ *   Priority: BREVO_API_KEY (HTTP, works on Render) → SMTP (works locally) → console preview.
  */
 async function sendMail({ to, subject, text, html }) {
+  const apiKey = process.env.BREVO_API_KEY;
+
+  if (apiKey) {
+    const fromEmail = (process.env.MAIL_FROM || "ChalkBoard <KULDEEP_EMAIL_REDACTED>")
+      .replace(/^[^<]*</, "").replace(>.*$/, "").trim();
+    const fromName = (process.env.MAIL_FROM || "ChalkBoard").split("<")[0].trim();
+
+    const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "api-key": apiKey,
+      },
+      body: JSON.stringify({
+        sender: { name: fromName, email: fromEmail },
+        to: [{ email: to }],
+        subject,
+        textContent: text,
+        htmlContent: html || text,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text();
+      console.error(`BREVO API ERROR ${resp.status}: ${body}`);
+      throw new Error(`Brevo API ${resp.status}`);
+    }
+    return { preview: false };
+  }
+
   const transport = getTransport();
 
   if (transport) {
