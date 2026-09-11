@@ -45,7 +45,7 @@ async function sendMail({ to, subject, text, html }) {
 
   if (apiKey) {
     const fromEmail = (process.env.MAIL_FROM || "ChalkBoard <KULDEEP_EMAIL_REDACTED>")
-      .replace(/^[^<]*</, "").replace(>.*$/, "").trim();
+      .replace(/^[^<]*</, "").replace(/>.*$/, "").trim();
     const fromName = (process.env.MAIL_FROM || "ChalkBoard").split("<")[0].trim();
 
     const resp = await fetch("https://api.brevo.com/v3/smtp/email", {

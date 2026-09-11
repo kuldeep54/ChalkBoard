@@ -88,6 +88,63 @@ MONGODB_URI_REDACTED
 
 **Then tell me the URL** (e.g. `https://chalkboard-api.onrender.com`) and I'll do the rest.
 
+### 5d. If products return a 500 error through Render (Mongo buffering timeout)
+
+Symptom:
+```
+Operation `products.countDocuments()` buffering timed out after 10000ms
+```
+(= the Render server is running but **cannot reach Atlas**.)
+
+Step-by-step fix:
+1. **MongoDB Atlas** → *Network Access* → *Add IP Address* → **Allow access from anywhere** (`0.0.0.0/0`) → Confirm. Render uses many different IPs, so a single IP never works.
+2. **Render dashboard** → click **`chalkboard-api`** (the service) → **Environment** tab.
+3. Find **`MONGODB_URI`**, expand it, and make sure it is EXACTLY (no quotes, no spaces, no `db_password` placeholder):
+   ```
+   MONGODB_URI_REDACTED
+   ```
+   If it's wrong → **Edit**, paste the above, **Save**.
+4. **Manual Deploy** button → **Redeploy current commit** (or *Clear build cache & deploy*) → wait until status = **Live** (~3–5 min).
+5. **Logs** tab → at the top of the latest batch you should see:
+   ```
+   MongoDB Connected: ac-jrtonwz-shard-...
+   ```
+   or an `Error: MongoNetworkError` line to tell us the real cause.
+6. Retest: `https://chalkboard-api.onrender.com/api/products` → expect a JSON with products.
+
+### 5e. If emails fail on Render (`MAILER ERROR: Connection timeout`)
+
+**Cause:** Google blocks connections to `smtp.gmail.com` from data-center IPs
+(Render's servers). TCP connect times out → nodemailer gives up.
+
+**Fix:** route email through **Brevo** (free relay, 300 emails/day) instead of
+Gmail's SMTP directly. Your Gmail stays the sender address.
+
+Step-by-step:
+1. **https://www.brevo.com** → click **Sign up** (top-right). Brevo is FREE —
+   ignore any price/plan banners, free tier needs **no credit card**.
+   Fill email `KULDEEP_EMAIL_REDACTED`, make a Brevo password
+   (e.g. `ChalkBoard@2026`), tick checkboxes, **Create my account**.
+2. Open your Gmail → click the **confirmation link** Brevo sent → account active.
+3. In the Brevo dashboard → **left sidebar** → **SMTP & API** → click the **SMTP** tab.
+4. **Sender Information** → **Edit sender** → enter `KULDEEP_EMAIL_REDACTED` → Save.
+   Gmail gets a confirmation email → copy the **6-digit code** → paste it back in
+   Brevo to confirm the sender.
+5. On the same SMTP page → **SMTP Keys** → **Generate a new SMTP key**
+   → name it `chalkboard` → **Generate**. It shows two values:
+   - **SMTP login** = your Brevo account email (usually the same Gmail)
+   - **SMTP key** = starts with `xkeysib-...`
+6. In Render → `chalkboard-api` → **Environment**, change:
+   | Key | Value |
+   |---|---|
+   | `SMTP_HOST` | `smtp-relay.brevo.com` |
+   | `SMTP_PORT` | `587` |
+   | `SMTP_USER` | *your Brevo login email* |
+   | `SMTP_PASS` | *your xkeysib-... key* |
+   | `MAIL_FROM` | `ChalkBoard <KULDEEP_EMAIL_REDACTED>` |
+7. **Manual Deploy → Redeploy current commit** → wait for Live.
+8. Retest register → expect `success: true` and a real verification email.
+
 ---
 
 ## 6. 🔲 AFTER Render is live — point app at cloud backend
@@ -147,6 +204,20 @@ eas build -p android --profile preview
 - [ ] `render.yaml` present (done)
 - [ ] `eas login` done
 - [ ] `eas build -p android --profile preview` run
+
+---
+
+## Current status (2026-09-11)
+
+| Step | Status |
+|---|---|
+| Atlas cluster + user | ✅ done |
+| Products seeded into Atlas | ✅ done |
+| GitHub repo `kuldeep54/ChalkBoard` | ✅ done |
+| `render.yaml` blueprint pushed | ✅ done |
+| Render service `chalkboard-api` | 🟡 live + Mongo OK, **email blocked — do section 5e (Brevo)** |
+| `.env` → Render URL | 🔲 after 5d is fixed |
+| `eas login` + APK build | 🔲 after 5d is fixed |
 
 ---
 
