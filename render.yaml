@@ -31,8 +31,8 @@ services:
       - key: SMTP_SECURE
         value: "false"
       - key: SMTP_USER
-        value: b8e640001@smtp-brevo.com
+        sync: false
       - key: SMTP_PASS
-        value: SMTP_KEY_REDACTED
+        sync: false
       - key: BREVO_API_KEY
-        value: API_KEY_REDACTED
+        sync: false
