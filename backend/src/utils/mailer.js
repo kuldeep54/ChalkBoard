@@ -44,7 +44,7 @@ async function sendMail({ to, subject, text, html }) {
   const apiKey = process.env.BREVO_API_KEY;
 
   if (apiKey) {
-    const fromEmail = (process.env.MAIL_FROM || "ChalkBoard <KULDEEP_EMAIL_REDACTED>")
+    const fromEmail = (process.env.MAIL_FROM || "ChalkBoard <no-reply@chalkboard.app>")
       .replace(/^[^<]*</, "").replace(/>.*$/, "").trim();
     const fromName = (process.env.MAIL_FROM || "ChalkBoard").split("<")[0].trim();
 

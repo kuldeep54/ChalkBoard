@@ -23,7 +23,7 @@ services:
       - key: AUTH_BASE_URL
         value: chalkboard://
       - key: MAIL_FROM
-        value: ChalkBoard <KULDEEP_EMAIL_REDACTED>
+        value: ChalkBoard <no-reply@chalkboard.app>
       - key: SMTP_HOST
         value: smtp-relay.brevo.com
       - key: SMTP_PORT

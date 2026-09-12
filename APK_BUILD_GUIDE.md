@@ -123,7 +123,7 @@ Step-by-step:
 1. **https://www.brevo.com** → **Sign up** (FREE, no card) with any email.
 2. Left menu **Transactional → SMTP & API**.
 3. **SMTP tab → Sender Information → Edit sender** → enter
-   `KULDEEP_EMAIL_REDACTED` → confirm the 6-digit code email.
+   `your-verified-sender@example.com` → confirm the 6-digit code email.
 4. **Same page → SMTP Keys → Generate** → save as `SMTP_PASS` backup
    (starts `xsmtpsib-`). **NOTE:** SMTP never works on Render — ignore it.
 5. **IMPORTANT — the API key is the one that matters:**
@@ -136,7 +136,7 @@ Step-by-step:
    |---|---|
    | `BREVO_API_KEY` | `xkeysib-...` (the API key!) |
    | `SMTP_HOST/SMTP_USER/SMTP_PASS` | left as Brevo (unused on Render) |
-   | `MAIL_FROM` | `ChalkBoard <KULDEEP_EMAIL_REDACTED>` |
+   | `MAIL_FROM` | `ChalkBoard <no-reply@chalkboard.app>` |
 8. Redeploy + test register → expect `success: true` + real email in the inbox.
 
 > 💡 If you ever paste the wrong key (`xsmtpsib-` instead of `xkeysib-`),
@@ -228,7 +228,7 @@ eas build -p android --profile preview
 
 ### Quirks to expect
 - **First load after idle**: Render free tier sleeps after ~15 min; the first request wakes it (15–60 s). Fast after that.
-- **Emails**: sent from your own Gmail account (`KULDEEP_EMAIL_REDACTED`).
+- **Emails**: sent from your verified Brevo email.
 - **Location / address**: works anywhere — no reconfiguration needed.
 
 ---
